@@ -1,0 +1,265 @@
+package librrd
+
+import LayoutStylesheets.PropertyMap
+
+class WrappedDiagrams[T](val backend: Layouts[T]):
+  val unitWidth = backend.Layout.unitWidth
+
+  trait WrappedDiagramFields extends AlignedDiagrams.AlignedDiagramFields:
+    def toWrappedDiagram: WrappedDiagram
+    def toDirectedDiagram = toAlignedDiagram.toDirectedDiagram
+    // TODO: can we get rid of this
+    override val numRows = NumRows(1, 1)
+
+  sealed trait ContentWidthFields:
+    val minContent: Double
+    val maxContent: Double
+
+  trait Alignable:
+    def toAlignedDiagram: AlignedDiagrams.AlignedDiagram
+
+  sealed trait WrappedDiagram extends WrappedDiagramFields, ContentWidthFields, Alignable:
+    def toWrappedDiagram = this
+
+  sealed trait LocallyWrappedDiagram extends WrappedDiagram
+  sealed trait GlobalWrap extends ContentWidthFields, Alignable
+
+  case class Station(label: String,
+                     isTerminal: Boolean,
+                     direction: Direction,
+                     properties: PropertyMap,
+                     classes: Set[String] = Set.empty,
+                     id: Option[String] = None,
+                     groupLabel: Option[String] = None) extends LocallyWrappedDiagram, GlobalWrap:
+    val font = properties.get(LayoutStylesheets.Font)
+    val minContent = (new backend.StationWidthProperties(label, font,
+      properties.get(LayoutStylesheets.TextBoxEdge),
+      properties.get(LayoutStylesheets.TextBoxTrim)) { }).width
+    val maxContent = minContent
+    def toAlignedDiagram =
+      AlignedDiagrams.Station(label, isTerminal, direction, properties, classes, id, groupLabel)
+
+  case class Space(direction: Direction, verticalSide: Side)
+      extends LocallyWrappedDiagram, GlobalWrap:
+    val properties = PropertyMap(Seq())
+    val classes = Set()
+    val id = None
+    override val groupLabel = None
+    val minContent = 2*unitWidth
+    val maxContent = minContent
+    def toAlignedDiagram = AlignedDiagrams.Space(direction, verticalSide)
+
+
+  case class BlockVerticalConcatenation(
+      topSubdiagram: LocallyWrappedDiagram | GlobalWrap,
+      bottomSubdiagram: LocallyWrappedDiagram | GlobalWrap,
+      direction: Direction,
+      polarity: Polarity,
+      properties: PropertyMap,
+      tipSpecs: TipSpecifications,
+      classes: Set[String] = Set.empty,
+      id: Option[String] = None,
+      groupLabel: Option[String] = None) extends LocallyWrappedDiagram, GlobalWrap:
+
+    val extraWidths = SidedProperty.forEach(s =>
+      if tipSpecs(s) == TipSpecification.Vertical then 0 else 3*unitWidth)
+    val extraWidth = extraWidths.left + extraWidths.right
+    val minContent = Math.max(topSubdiagram.minContent, bottomSubdiagram.minContent) + extraWidth
+    val maxContent = Math.max(topSubdiagram.maxContent, bottomSubdiagram.maxContent) + extraWidth
+
+    def toAlignedDiagram = AlignedDiagrams.BlockVerticalConcatenation(
+      topSubdiagram.toAlignedDiagram, bottomSubdiagram.toAlignedDiagram,
+      direction, polarity, properties, tipSpecs, classes, id, groupLabel)
+
+
+  sealed trait SequenceWrap[+D <: ContentWidthFields] extends ContentWidthFields
+
+  case class HorizontalConcatenation[+D <: ContentWidthFields](
+      subdiagrams: Seq[D | InlineVerticalConcatenation[D]],
+      direction: Direction,
+      properties: PropertyMap,
+      classes: Set[String] = Set.empty,
+      id: Option[String] = None,
+      groupLabel: Option[String] = None) extends SequenceWrap[D]:
+    val minGap = if subdiagrams.isEmpty then 0 else ((subdiagrams.count(!_.isInstanceOf[Space]) - 1)
+      * properties.get(LayoutStylesheets.Gap))
+    val minContent = subdiagrams.map(_.minContent).sum + minGap
+    val maxContent = subdiagrams.map(_.maxContent).sum + minGap
+    val justifyContent = properties.get(LayoutStylesheets.JustifyContent)
+
+
+  case class InlineVerticalConcatenation[+D <: ContentWidthFields](
+      subdiagrams: Seq[D | HorizontalConcatenation[D]],
+      direction: Direction,
+      properties: PropertyMap,
+      tipSpecs: TipSpecifications,
+      classes: Set[String] = Set.empty,
+      id: Option[String] = None,
+      groupLabel: Option[String] = None) extends SequenceWrap[D]:
+
+    assert(subdiagrams.length >= 2,
+      "inline vertical concatenation must have at least 2 subdiagrams")
+
+    val markerWidth = backend.LineBreak.markerWidth(
+      properties.get(LayoutStylesheets.ContinuationMarker),
+      properties.get(LayoutStylesheets.SystemFont))
+
+    val extraWidths =
+      backend.BlockedHorizontalConcatenation.extraWidths(direction, tipSpecs, subdiagrams.length)
+    val extraWidth = extraWidths.left + extraWidths.right
+    val (first, mids, last) = splitEnds(subdiagrams)
+    val minContent = (List(first, last).map(_.minContent + markerWidth)
+                      ++ mids.map(_.minContent + 2*markerWidth)).max + extraWidth
+    val maxContent = (List(first, last).map(_.maxContent + markerWidth)
+                      ++ mids.map(_.maxContent + 2*markerWidth)).max + extraWidth
+
+
+  case class GlobalSequenceWrap(sw: SequenceWrap[GlobalWrap],
+                                origAligned: AlignedDiagrams.Sequence) extends GlobalWrap:
+    val minContent = sw.minContent
+    val maxContent = sw.maxContent
+    def toAlignedDiagram = origAligned
+
+
+
+  sealed trait HasBestUnderWidth[T]:
+    def bestUnder(width: Double, depth: Int): T
+
+
+  case class GloballyWrappedDiagram(
+      direction: Direction,
+      properties: PropertyMap,
+      options: Vector[GlobalWrap],
+      classes: Set[String],
+      id: Option[String]) extends HasBestUnderWidth[GlobalWrap], WrappedDiagram:
+    override val groupLabel = None
+
+    def toAlignedDiagram = options.head.toAlignedDiagram
+
+    val minContentOption = options.minBy(_.minContent)
+    val minContent: Double = minContentOption.minContent
+    val maxContent: Double = options.map(_.maxContent).max
+
+    def bestUnder(width: Double, depth: Int): GlobalWrap =
+      options
+        .filter(_.minContent <= width)
+        .maxByOption(gw => gw.minContent * gw.maxContent * gw.maxContent)
+        .getOrElse(minContentOption)
+
+
+  case class LocallyWrappedSequence[D <: LocallyWrappedDiagram | GlobalWrap](
+        subdiagramsOne: Seq[D],
+        subdiagramsMulti: Seq[D],
+        direction: Direction,
+        properties: PropertyMap,
+        tipSpecs: TipSpecifications,
+        classes: Set[String] = Set.empty,
+        id: Option[String] = None,
+        groupLabel: Option[String] = None)
+      extends HasBestUnderWidth[SequenceWrap[D]], LocallyWrappedDiagram:
+
+    val options: Vector[(SequenceWrap[D], PartitionIndices)] =
+      val (maybeSpaces, withoutSpaces) = trimSides(subdiagramsMulti, { case sp: Space => sp })
+      allPartitions(withoutSpaces.toList).map((partition, indices) =>
+        if partition.length == 1 then
+          (HorizontalConcatenation(
+             subdiagramsOne, direction, properties, classes, id, groupLabel),
+           indices)
+        else
+          val (first, mids, last) = splitEnds(partition)
+          val leftSpace = Space(direction, Side.Left).asInstanceOf[D]
+          val rightSpace = Space(direction, Side.Right).asInstanceOf[D]
+          val withSpaces = ((maybeSpaces.left.toList ++ first) :+ rightSpace)
+            +: mids.map(m => leftSpace +: m :+ rightSpace)
+            :+ (leftSpace +: (last ++ maybeSpaces.right.toList))
+          val spaceBetweenProperties =
+            import LayoutStylesheets.{JustifyContent, Property}
+            import JustifyContentPolicy.*
+            if properties.get(JustifyContent) == SpaceBetween
+            then properties.addAlways(Property(JustifyContent, Start))
+                 +: List.fill(mids.length)(properties)
+                 :+ properties.addAlways(Property(JustifyContent, End))
+            else List.fill(withSpaces.length)(properties)
+          (InlineVerticalConcatenation(
+             direction.reverse(withSpaces.zip(spaceBetweenProperties).map((rowSubs, props) =>
+               HorizontalConcatenation(
+                 rowSubs, direction, props, classes, None))),
+             direction, properties, tipSpecs,
+             groupLabel = groupLabel, id = id, classes = classes),
+           indices))
+
+    val minContentOption = options.minBy(_._1.minContent)
+    val minContent: Double = minContentOption._1.minContent
+    val maxContent: Double = options.last._1.maxContent
+
+    def toAlignedDiagram =
+      AlignedDiagrams.Sequence(
+        subdiagramsOne.map(_.toAlignedDiagram),
+        subdiagramsMulti.map(_.toAlignedDiagram),
+        direction, properties, tipSpecs, classes, id, groupLabel)
+
+    def bestUnder(width: Double, depth: Int): SequenceWrap[D] =
+      val fitting = options.filter(_._1.minContent <= width)
+      // make wrapping magic happen here
+      val minWrapLength = fitting.map(_._2.length).min
+      // fitting
+      //   .filter(_._2.length == minWrapLength)
+      //   .minByOption(_._1.maxContent)
+      //   .getOrElse(minContentOption)._1
+      fitting
+        .filterMinBy(w =>
+          val wrapPenalty = w._2.length * Math.pow(2, 2*depth) * 10
+          val contentPenalty = Math.pow(Math.max(0, w._1.maxContent - width), 2)
+          wrapPenalty + contentPenalty)
+        .filterMinBy(_._1.maxContent)
+        .headOption
+        .getOrElse(minContentOption)._1
+
+
+  def wrapLocally(diagram: AlignedDiagrams.AlignedDiagram): LocallyWrappedDiagram =
+    diagram match
+      case AlignedDiagrams.Station(label, isTerminal, direction, properties, classes, id, groupLabel) =>
+        Station(label, isTerminal, direction, properties, classes, id, groupLabel)
+      case AlignedDiagrams.Space(direction, verticalSide) =>
+        Space(direction, verticalSide)
+      case AlignedDiagrams.Sequence(subdiagramsOne, subdiagramsMulti,
+          direction, properties, tipSpecs, classes, id, groupLabel) =>
+        LocallyWrappedSequence(subdiagramsOne.map(wrapLocally), subdiagramsMulti.map(wrapLocally),
+          direction, properties, tipSpecs, classes, id, groupLabel)
+      case AlignedDiagrams.BlockVerticalConcatenation(topSubdiagram, bottomSubdiagram,
+          direction, polarity, properties, tipSpecs, classes, id, groupLabel) =>
+        BlockVerticalConcatenation(wrapLocally(topSubdiagram), wrapLocally(bottomSubdiagram),
+          direction, polarity, properties, tipSpecs, classes, id, groupLabel)
+
+
+  def wrapGlobally(diagram: AlignedDiagrams.AlignedDiagram): GloballyWrappedDiagram =
+    def rec(diagram: AlignedDiagrams.AlignedDiagram): Vector[GlobalWrap] =
+      diagram match
+        case AlignedDiagrams.Station(label, isTerminal, direction, properties, classes, id, groupLabel) =>
+          Vector(Station(label, isTerminal, direction, properties, classes, id, groupLabel))
+        case AlignedDiagrams.Space(direction, verticalSide) =>
+          Vector(Space(direction, verticalSide))
+        case seq @ AlignedDiagrams.Sequence(subdiagramsOne, subdiagramsMulti,
+            direction, properties, tipSpecs, classes, id, groupLabel) =>
+          subdiagramsOne.zip(subdiagramsMulti)
+            .map(s => rec(s._1).zip(rec(s._2)))
+            .foldLeft[Vector[Vector[(GlobalWrap, GlobalWrap)]]](Vector(Vector()))((acc, subOptions) =>
+              acc.flatMap(accOption => subOptions.map(accOption :+ _)))
+            .map(_.unzip)
+            .flatMap((so, sm) =>
+              LocallyWrappedSequence(so, sm, direction, properties, tipSpecs,
+                                     classes, id, groupLabel)
+                .options.map(_._1))
+            .map(sw => GlobalSequenceWrap(sw, seq))
+        case AlignedDiagrams.BlockVerticalConcatenation(topSubdiagram, bottomSubdiagram,
+            direction, polarity, properties, tipSpecs, classes, id, groupLabel) =>
+          val topGlobals = rec(topSubdiagram)
+          val bottomGlobals = rec(bottomSubdiagram)
+          for
+            tg <- topGlobals
+            bg <- bottomGlobals
+          yield
+            BlockVerticalConcatenation(tg, bg, direction, polarity, properties, tipSpecs,
+                                       classes, id, groupLabel)
+    GloballyWrappedDiagram(diagram.direction, diagram.properties, rec(diagram),
+      diagram.classes, diagram.id)

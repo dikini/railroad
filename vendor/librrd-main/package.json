@@ -1,0 +1,7 @@
+{
+  "name": "librrd",
+  "type": "module",
+  "dependencies": {
+    "canvas": "^3.2.0"
+  }
+}

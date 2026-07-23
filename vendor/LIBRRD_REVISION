@@ -1,0 +1,6 @@
+Source: https://github.com/epfl-systemf/librrd
+Revision: 0bfc218f90f06136766df4d6030767b09c45ab00
+Fetched: 2026-07-23
+
+This revision is used because it exposes librrd's Scala.js browser API. The
+earlier ecoop2026-artifact tag contains GUI and CLI modules but not that API.

@@ -1,0 +1,12 @@
+/.bloop/
+/.bsp/
+/.metals/
+/project/
+/target/
+/cli/*.js
+/cli/*.js.map
+/cli/examples/*.svg
+/gui/*.js
+/gui/*.js.map
+/node_modules/
+*.uuid

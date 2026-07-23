@@ -1,0 +1,11 @@
+dist/
+node_modules/
+*.vsix
+vendor/librrd-main/api/
+vendor/librrd-main/cli/*.js
+vendor/librrd-main/cli/*.map
+vendor/librrd-main/gui/*.js
+vendor/librrd-main/gui/*.map
+vendor/librrd-main/target/
+vendor/librrd-main/project/target/
+vendor/librrd-main/.bloop/

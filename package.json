@@ -1,0 +1,48 @@
+{
+  "name": "rrd-preview",
+  "displayName": "RRD Preview",
+  "description": "Render librrd railroad diagrams in VS Code's built-in Markdown preview.",
+  "version": "0.1.0",
+  "publisher": "rrd-preview",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "railroad",
+    "railroad-diagram",
+    "grammar",
+    "rrd",
+    "librrd"
+  ],
+  "main": "./dist/extension.cjs",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "markdown.markdownItPlugins": true,
+    "markdown.previewScripts": [
+      "./dist/preview.js"
+    ],
+    "markdown.previewStyles": [
+      "./media/rrd.css"
+    ]
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository",
+    "check": "npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.1",
+    "esbuild": "^0.25.10"
+  }
+}

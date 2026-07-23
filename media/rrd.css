@@ -1,0 +1,28 @@
+.rrd-diagram {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1em 0;
+}
+
+.rrd-diagram svg {
+  display: block;
+  max-width: none;
+}
+
+.rrd-diagram .librrd-rail,
+.rrd-diagram .librrd-station rect,
+.rrd-diagram path {
+  fill: none;
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1px;
+}
+
+.rrd-diagram text {
+  fill: var(--vscode-editor-foreground);
+}
+
+.rrd-error {
+  color: var(--vscode-errorForeground);
+  white-space: pre-wrap;
+}
