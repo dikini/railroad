@@ -16,4 +16,8 @@ test('replaces rrd fences while preserving the existing fence renderer', () => {
 
   assert.equal(md.renderer.rules.fence([{ info: 'javascript', content: 'x' }], 0), 'fallback:javascript');
   assert.match(md.renderer.rules.fence([{ info: 'rrd', content: '("x")' }], 0), /class="rrd-diagram"/);
+  assert.match(
+    md.renderer.rules.fence([{ info: 'ebnf', content: 'rule = "x" ;' }], 0),
+    /class="rrd-diagram"/
+  );
 });
