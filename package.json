@@ -43,6 +43,16 @@
   },
   "devDependencies": {
     "@vscode/vsce": "^3.6.1",
-    "esbuild": "^0.25.10"
+    "esbuild": "^0.25.10",
+    "rehype-stringify": "^10.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
+  },
+  "dependencies": {
+    "linkedom": "^0.18.13"
+  },
+  "exports": {
+    "./rehype": "./src/rehype.js"
   }
 }
