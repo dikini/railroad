@@ -93,4 +93,5 @@ test('publishes the Rehype plugin as a bundled package entry point', async () =>
   const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url)));
 
   assert.equal(manifest.exports['./rehype'], './dist/rehype.js');
+  assert.match(manifest.description, /Rehype/);
 });

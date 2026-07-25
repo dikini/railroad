@@ -1,7 +1,7 @@
 {
   "name": "rrd-preview",
   "displayName": "RRD Preview",
-  "description": "Render librrd railroad diagrams in VS Code's built-in Markdown preview.",
+  "description": "Render librrd railroad diagrams from RRD and EBNF fences in VS Code and Rehype.",
   "version": "0.1.0",
   "publisher": "rrd-preview",
   "license": "MIT",
@@ -18,6 +18,8 @@
     "markdown",
     "railroad",
     "railroad-diagram",
+    "rehype",
+    "ebnf",
     "grammar",
     "rrd",
     "librrd"
