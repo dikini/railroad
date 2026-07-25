@@ -16,6 +16,30 @@ terminal, nonterminal {
 const domGlobals = ['document', 'window', 'Node', 'Element', 'SVGElement'];
 let librrd;
 
+function textMetricsContext() {
+  return {
+    font: '14px monospace',
+    measureText(text) {
+      const size = Number(/([0-9.]+)px/.exec(this.font)?.[1] ?? 14);
+      return {
+        width: [...text].length * size * 0.6,
+        actualBoundingBoxAscent: size * 0.8,
+        actualBoundingBoxDescent: size * 0.2
+      };
+    }
+  };
+}
+
+function configureLayoutDom(document, window) {
+  const createElement = document.createElement.bind(document);
+  document.createElement = (name, ...args) => {
+    const element = createElement(name, ...args);
+    if (name.toLowerCase() === 'canvas') element.getContext = () => textMetricsContext();
+    return element;
+  };
+  window.getComputedStyle = () => ({ fontFamily: 'monospace', fontSize: '14px' });
+}
+
 function sourceText(node) {
   if (node.type === 'text') return node.value;
   return (node.children ?? []).map(sourceText).join('');
@@ -55,6 +79,7 @@ function withDom(callback) {
   const previous = domGlobals.map((name) => ({ name, exists: Object.hasOwn(globalThis, name), value: globalThis[name] }));
 
   try {
+    configureLayoutDom(document, window);
     Object.assign(globalThis, {
       document,
       window,

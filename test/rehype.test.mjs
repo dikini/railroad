@@ -32,6 +32,15 @@ async function render(markdown, options) {
     .process(markdown);
 }
 
+async function renderWithLibrrd(markdown, options) {
+  return unified()
+    .use(remarkParse)
+    .use(remarkRehype)
+    .use(rehypeRailroad, options)
+    .use(rehypeStringify)
+    .process(markdown);
+}
+
 test('replaces an RRD fence with a static SVG railroad diagram', async () => {
   const file = await render('```rrd\n("function" [identifier])\n```');
 
@@ -42,12 +51,12 @@ test('replaces an RRD fence with a static SVG railroad diagram', async () => {
 });
 
 test('renders every EBNF production in a fence as a labeled diagram', async () => {
-  const file = await render('```ebnf\nfirst = "a" ;\nsecond = first | "b" ;\n```');
+  const file = await renderWithLibrrd('```ebnf\nfirst = "a" ;\nsecond = first | "b" ;\n```');
 
   assert.equal((String(file).match(/<figure class="rrd-diagram">/g) ?? []).length, 2);
   assert.match(String(file), /<figcaption>first<\/figcaption>/);
   assert.match(String(file), /<figcaption>second<\/figcaption>/);
-  assert.match(String(file), /<svg\b/);
+  assert.match(String(file), /class="librrd-station librrd-terminal"/);
   assert.equal(file.messages.length, 0);
 });
 
@@ -71,6 +80,13 @@ test('uses the configured layout width', async () => {
   const file = await render('```rrd\n("x")\n```', { width: 320 });
 
   assert.match(String(file), /<svg[^>]*width="320"/);
+});
+
+test('renders SVG with the bundled librrd layout engine', async () => {
+  const file = await renderWithLibrrd('```rrd\n("x")\n```');
+
+  assert.match(String(file), /class="librrd-station librrd-terminal"/);
+  assert.equal(file.messages.length, 0);
 });
 
 test('publishes the Rehype plugin as a bundled package entry point', async () => {
