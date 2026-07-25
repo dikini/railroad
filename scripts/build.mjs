@@ -34,3 +34,13 @@ await build({
   platform: 'browser',
   target: 'es2022'
 });
+
+await build({
+  entryPoints: ['src/rehype.js'],
+  bundle: true,
+  external: ['linkedom'],
+  format: 'esm',
+  outfile: 'dist/rehype.js',
+  platform: 'node',
+  target: 'node18'
+});

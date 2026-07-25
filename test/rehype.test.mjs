@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import rehypeStringify from 'rehype-stringify';
 import remarkParse from 'remark-parse';
@@ -70,4 +71,10 @@ test('uses the configured layout width', async () => {
   const file = await render('```rrd\n("x")\n```', { width: 320 });
 
   assert.match(String(file), /<svg[^>]*width="320"/);
+});
+
+test('publishes the Rehype plugin as a bundled package entry point', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url)));
+
+  assert.equal(manifest.exports['./rehype'], './dist/rehype.js');
 });

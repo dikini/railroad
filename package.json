@@ -53,6 +53,6 @@
     "linkedom": "^0.18.13"
   },
   "exports": {
-    "./rehype": "./src/rehype.js"
+    "./rehype": "./dist/rehype.js"
   }
 }
