@@ -32,6 +32,12 @@ test('compiles negated character classes as terminals without affecting optional
   ]);
 });
 
+test('preserves escaped closing brackets in character classes', () => {
+  assert.deepEqual(compileEbnf('token = [^\\]]+ ;'), [
+    { name: 'token', rrd: '("[^\\]]" (- "[^\\]]" ()))' }
+  ]);
+});
+
 test('reports an unterminated character class when its closing bracket is escaped', () => {
   assert.throws(
     () => compileEbnf('token = [^\\]'),
