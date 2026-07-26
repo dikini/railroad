@@ -99,7 +99,7 @@ function tokenize(source) {
 
       while (index < source.length) {
         const next = source[index];
-        if (next === '\n') break;
+        if (next === '\n' || next === '\r') break;
 
         value += advance();
         if (escaped) {

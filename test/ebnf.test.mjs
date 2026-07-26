@@ -59,6 +59,34 @@ test('compiles slash-delimited regex literals as visual terminals', () => {
   }]);
 });
 
+test('closes regex literals after an even run of backslashes', () => {
+  assert.deepEqual(compileEbnf(String.raw`escaped = /a\\/ ;`), [{
+    name: 'escaped',
+    rrd: String.raw`("/a\\/")`
+  }]);
+});
+
+test('reports the opening location for unterminated regex literals at every line ending', () => {
+  for (const source of [
+    'pattern = /abc',
+    'pattern = /abc\n/ ;',
+    'pattern = /abc\r/ ;',
+    'pattern = /abc\r\n/ ;'
+  ]) {
+    assert.throws(
+      () => compileEbnf(source),
+      /EBNF error at 1:11: unterminated regex literal/
+    );
+  }
+});
+
+test('rejects regex literals containing both terminal quote delimiters', () => {
+  assert.throws(
+    () => compileEbnf(`pattern = /["']/ ;`),
+    /RRD terminals cannot contain both single and double quotes/
+  );
+});
+
 test('keeps quoted literals containing regex syntax inside EBNF optionals', () => {
   const backslashLiteral = String.raw`a\b`;
   const productions = compileEbnf(

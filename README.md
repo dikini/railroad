@@ -18,6 +18,12 @@ term = factor { ("*" | "/") factor } ;
 ```
 ````
 
+### EBNF terminals
+
+EBNF productions use `=` and end with `;`; `::=` is not accepted. In addition to quoted terminals, unambiguous regex-like character classes are accepted as visual terminals, including `[a-zA-Z_]` and `[^\n]`. Postfix `+`, `*`, and `?` remain EBNF repetition operators, so `[a-zA-Z_]+` is shown as one-or-more occurrences of that class.
+
+For a complete regex-shaped terminal, use slash delimiters, for example `/\d+/`. The contents are display-only: RRD Preview preserves them in the diagram but does not parse, validate, or execute regex syntax. Since librrd terminal labels must use either single or double quotes, a regex literal containing both quote delimiters (such as `/["']/`) produces a clear error.
+
 ## Rehype plugin
 
 Install the package in the project that generates your HTML:
