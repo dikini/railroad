@@ -52,24 +52,40 @@ function tokenize(source) {
       continue;
     }
 
-    if (source.startsWith('[^', index)) {
-      let value = '';
+    if (character === '[') {
+      let scan = index + 1;
       let escaped = false;
       let closed = false;
-      while (index < source.length) {
-        const next = advance();
-        value += next;
+      let hasEscape = false;
+      let hasRange = false;
+
+      while (scan < source.length) {
+        const next = source[scan];
         if (next === ']' && !escaped) {
           closed = true;
           break;
         }
-        escaped = next === '\\' && !escaped;
+
+        if (next === '\\' && !escaped) {
+          hasEscape = true;
+          escaped = true;
+        } else {
+          hasRange ||= next === '-' && scan > index + 1 && source[scan + 1] !== ']';
+          escaped = false;
+        }
+        scan++;
       }
-      if (!closed) {
+
+      const isCharacterClass = source[index + 1] === '^' || hasEscape || hasRange;
+      if (isCharacterClass && !closed) {
         throw new EbnfSyntaxError({ line: startLine, column: startColumn }, 'unterminated character class');
       }
-      token('characterClass', value, startLine, startColumn);
-      continue;
+      if (isCharacterClass) {
+        let value = '';
+        while (index <= scan) value += advance();
+        token('characterClass', value, startLine, startColumn);
+        continue;
+      }
     }
 
     if ('=;|()[]{}?+*'.includes(character)) {

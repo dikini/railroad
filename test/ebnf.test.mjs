@@ -32,6 +32,18 @@ test('compiles negated character classes as terminals without affecting optional
   ]);
 });
 
+test('compiles positive regex character classes without changing optional groups', () => {
+  const productions = compileEbnf(
+    'identifier = [a-zA-Z_][a-zA-Z0-9_]* ; maybe = [identifier] ;'
+  );
+
+  assert.deepEqual(productions, [
+    { name: 'identifier', rrd: '("[a-zA-Z_]" (- "[a-zA-Z0-9_]" ()))' },
+    { name: 'maybe', rrd: '(+ [identifier] ())' }
+  ]);
+  assert.doesNotThrow(() => LibRRD.parseDiagram(productions[0].rrd));
+});
+
 test('emits LibRRD-valid repeated character classes containing double quotes', () => {
   const productions = compileEbnf('rule = [^"]+ ;');
 
