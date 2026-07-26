@@ -40,6 +40,18 @@ function tokenize(source) {
 
     const startLine = line;
     const startColumn = column;
+    if (source.startsWith('(*', index)) {
+      advance();
+      advance();
+      while (index < source.length && !source.startsWith('*)', index)) advance();
+      if (index === source.length) {
+        throw new EbnfSyntaxError({ line: startLine, column: startColumn }, 'unterminated block comment');
+      }
+      advance();
+      advance();
+      continue;
+    }
+
     if ('=;|()[]{}?+*'.includes(character)) {
       advance();
       token(character, character, startLine, startColumn);

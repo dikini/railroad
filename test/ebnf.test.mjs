@@ -35,6 +35,18 @@ test('compiles several productions and ignores double-dash comments', () => {
   ]);
 });
 
+test('compiles productions separated by EBNF block comments', () => {
+  assert.deepEqual(compileEbnf(`
+    first = "a" ;
+    (* annotation
+       on another line *)
+    second = first ;
+  `), [
+    { name: 'first', rrd: '("a")' },
+    { name: 'second', rrd: '([first])' }
+  ]);
+});
+
 test('reports EBNF syntax errors with a source location', () => {
   assert.throws(
     () => compileEbnf('rule = ( "unterminated" ;'),
