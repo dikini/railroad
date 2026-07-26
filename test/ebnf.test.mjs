@@ -32,6 +32,22 @@ test('compiles negated character classes as terminals without affecting optional
   ]);
 });
 
+test('emits LibRRD-valid repeated character classes containing double quotes', () => {
+  const productions = compileEbnf('rule = [^"]+ ;');
+
+  assert.deepEqual(productions, [
+    { name: 'rule', rrd: "('[^\"]' (- '[^\"]' ()))" }
+  ]);
+  assert.doesNotThrow(() => LibRRD.parseDiagram(productions[0].rrd));
+});
+
+test('rejects character classes containing both terminal quote delimiters', () => {
+  assert.throws(
+    () => compileEbnf(`rule = [^"']+ ;`),
+    /RRD terminals cannot contain both single and double quotes/
+  );
+});
+
 test('preserves escaped closing brackets in character classes', () => {
   assert.deepEqual(compileEbnf('token = [^\\]]+ ;'), [
     { name: 'token', rrd: '("[^\\]]" (- "[^\\]]" ()))' }

@@ -188,8 +188,10 @@ class Parser {
 }
 
 function terminal(value) {
-  if (value.includes('"')) throw new Error('RRD terminals cannot contain double quotes');
-  return `"${value}"`;
+  if (value.includes('"') && value.includes("'")) {
+    throw new Error('RRD terminals cannot contain both single and double quotes');
+  }
+  return value.includes('"') ? `'${value}'` : `"${value}"`;
 }
 
 function compile(expression) {

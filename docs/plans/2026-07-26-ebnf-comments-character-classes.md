@@ -4,7 +4,7 @@
 
 **Goal:** Allow EBNF fences to use `(* ... *)` comments and display regex-style character classes as single terminals.
 
-**Architecture:** Extend the existing single-pass tokenizer in `src/ebnf.js`. Comments are skipped; a bracket form whose opening content has regex-class markers (`^` or `\`) becomes a `characterClass` token, while all other brackets remain EBNF optional-group tokens. The parser compiles a class as an ordinary literal, preserving the bracket spelling for diagram output.
+**Architecture:** Extend the existing single-pass tokenizer in `src/ebnf.js`. Comments are skipped; only a bracket form beginning `[^` becomes a `characterClass` token, while all other brackets remain EBNF optional-group tokens. The parser compiles a class as an ordinary literal, preserving the bracket spelling for diagram output.
 
 **Tech Stack:** Node.js ESM, Node test runner, strict assertions, librrd.
 
@@ -82,11 +82,11 @@ test('compiles regex-like character classes as single terminals', () => {
 
 Run: `node --test test/ebnf.test.mjs`
 
-Expected: FAIL because the tokenizer currently emits `[` as optional-group punctuation and the parser cannot consume `^` or backslash escape content.
+Expected: FAIL because the tokenizer currently emits `[` as optional-group punctuation and the parser cannot consume a negated character class.
 
 **Step 3: Write minimal implementation**
 
-Add a `readCharacterClass` tokenizer branch before punctuation handling. When a `[` is followed by `^` or contains a backslash before its closing `]`, consume through the unescaped closing bracket and emit `characterClass` with the original bracketed spelling. In `Parser.term`, accept that token and return a literal AST whose value is its spelling. Leave the existing `[` and `]` punctuation path in place for optional groups.
+Add a `readCharacterClass` tokenizer branch before punctuation handling. When the input begins `[^`, consume through the unescaped closing bracket and emit `characterClass` with the original bracketed spelling. In `Parser.term`, accept that token and return a literal AST whose value is its spelling. Leave the existing `[` and `]` punctuation path in place for optional groups.
 
 **Step 4: Run test to verify it passes**
 
