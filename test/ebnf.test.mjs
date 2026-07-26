@@ -44,6 +44,24 @@ test('compiles positive regex character classes without changing optional groups
   assert.doesNotThrow(() => LibRRD.parseDiagram(productions[0].rrd));
 });
 
+test('keeps quoted literals containing regex syntax inside EBNF optionals', () => {
+  const backslashLiteral = String.raw`a\b`;
+  const productions = compileEbnf(
+    `hyphen = [ "a-b" ] ; backslash = [ "${backslashLiteral}" ] ;`
+  );
+
+  assert.deepEqual(productions, [
+    { name: 'hyphen', rrd: '(+ "a-b" ())' },
+    { name: 'backslash', rrd: `(+ "${backslashLiteral}" ())` }
+  ]);
+});
+
+test('compiles positive character classes with literal edge hyphens', () => {
+  assert.deepEqual(compileEbnf('classes = [-a] [a-] [-] ;'), [
+    { name: 'classes', rrd: '("[-a]" "[a-]" "[-]")' }
+  ]);
+});
+
 test('emits LibRRD-valid repeated character classes containing double quotes', () => {
   const productions = compileEbnf('rule = [^"]+ ;');
 

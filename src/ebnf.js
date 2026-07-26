@@ -57,7 +57,7 @@ function tokenize(source) {
       let escaped = false;
       let closed = false;
       let hasEscape = false;
-      let hasRange = false;
+      let hasHyphen = false;
 
       while (scan < source.length) {
         const next = source[scan];
@@ -70,13 +70,17 @@ function tokenize(source) {
           hasEscape = true;
           escaped = true;
         } else {
-          hasRange ||= next === '-' && scan > index + 1 && source[scan + 1] !== ']';
+          hasHyphen ||= next === '-' && !escaped;
           escaped = false;
         }
         scan++;
       }
 
-      const isCharacterClass = source[index + 1] === '^' || hasEscape || hasRange;
+      const content = source.slice(index + 1, scan);
+      const containsEbnfSyntax = /[\s"'(){}[\]|?+*=]/.test(content);
+      const isCharacterClass = source[index + 1] === '^' || (
+        !containsEbnfSyntax && (hasEscape || hasHyphen)
+      );
       if (isCharacterClass && !closed) {
         throw new EbnfSyntaxError({ line: startLine, column: startColumn }, 'unterminated character class');
       }
