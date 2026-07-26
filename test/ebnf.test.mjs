@@ -23,6 +23,22 @@ test('compiles grouping, optional, repeated, and one-or-more EBNF forms', () => 
   }]);
 });
 
+test('compiles negated character classes as terminals without affecting optional groups', () => {
+  const productions = compileEbnf('token = [^\\n\\r#:=]+ ; optional = [ "prefix" ] ;');
+
+  assert.deepEqual(productions, [
+    { name: 'token', rrd: '("[^\\n\\r#:=]" (- "[^\\n\\r#:=]" ()))' },
+    { name: 'optional', rrd: '(+ "prefix" ())' }
+  ]);
+});
+
+test('reports an unterminated character class when its closing bracket is escaped', () => {
+  assert.throws(
+    () => compileEbnf('token = [^\\]'),
+    /EBNF error at 1:9: unterminated character class/
+  );
+});
+
 test('compiles several productions and ignores double-dash comments', () => {
   const productions = compileEbnf(`
     first = "a" ; -- annotation
