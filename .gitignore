@@ -1,4 +1,5 @@
 dist/
+.worktrees/
 node_modules/
 *.vsix
 vendor/librrd-main/api/
