@@ -92,6 +92,33 @@ function tokenize(source) {
       }
     }
 
+    if (character === '/') {
+      let value = advance();
+      let escaped = false;
+      let closed = false;
+
+      while (index < source.length) {
+        const next = source[index];
+        if (next === '\n') break;
+
+        value += advance();
+        if (escaped) {
+          escaped = false;
+        } else if (next === '\\') {
+          escaped = true;
+        } else if (next === '/') {
+          closed = true;
+          break;
+        }
+      }
+
+      if (!closed) {
+        throw new EbnfSyntaxError({ line: startLine, column: startColumn }, 'unterminated regex literal');
+      }
+      token('regexLiteral', value, startLine, startColumn);
+      continue;
+    }
+
     if ('=;|()[]{}?+*'.includes(character)) {
       advance();
       token(character, character, startLine, startColumn);
@@ -184,6 +211,8 @@ class Parser {
     if (this.accept('string')) {
       expression = { type: 'literal', value: current.value };
     } else if (this.accept('characterClass')) {
+      expression = { type: 'literal', value: current.value };
+    } else if (this.accept('regexLiteral')) {
       expression = { type: 'literal', value: current.value };
     } else if (this.accept('identifier')) {
       expression = { type: 'reference', name: current.value };

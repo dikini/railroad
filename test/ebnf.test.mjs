@@ -44,6 +44,21 @@ test('compiles positive regex character classes without changing optional groups
   assert.doesNotThrow(() => LibRRD.parseDiagram(productions[0].rrd));
 });
 
+test('compiles slash-delimited regex literals as visual terminals', () => {
+  const productions = compileEbnf(String.raw`number = /\d+(?:\.\d+)?/+ ;`);
+
+  assert.deepEqual(productions, [{
+    name: 'number',
+    rrd: '("/\\d+(?:\\.\\d+)?/" (- "/\\d+(?:\\.\\d+)?/" ()))'
+  }]);
+  assert.doesNotThrow(() => LibRRD.parseDiagram(productions[0].rrd));
+
+  assert.deepEqual(compileEbnf(String.raw`url = /https?:\/\/[^\s]+/ ;`), [{
+    name: 'url',
+    rrd: '("/https?:\\/\\/[^\\s]+/")'
+  }]);
+});
+
 test('keeps quoted literals containing regex syntax inside EBNF optionals', () => {
   const backslashLiteral = String.raw`a\b`;
   const productions = compileEbnf(
