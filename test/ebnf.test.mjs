@@ -62,6 +62,13 @@ test('compiles positive character classes with literal edge hyphens', () => {
   ]);
 });
 
+test('compiles positive character classes with escaped brackets', () => {
+  assert.deepEqual(compileEbnf(String.raw`close = [a\]] ; open = [\[] ;`), [
+    { name: 'close', rrd: String.raw`("[a\]]")` },
+    { name: 'open', rrd: String.raw`("[\[]")` }
+  ]);
+});
+
 test('emits LibRRD-valid repeated character classes containing double quotes', () => {
   const productions = compileEbnf('rule = [^"]+ ;');
 

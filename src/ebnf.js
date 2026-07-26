@@ -58,6 +58,7 @@ function tokenize(source) {
       let closed = false;
       let hasEscape = false;
       let hasHyphen = false;
+      let containsEbnfSyntax = false;
 
       while (scan < source.length) {
         const next = source[scan];
@@ -71,13 +72,12 @@ function tokenize(source) {
           escaped = true;
         } else {
           hasHyphen ||= next === '-' && !escaped;
+          containsEbnfSyntax ||= !escaped && /[\s"'(){}[|?+*=]/.test(next);
           escaped = false;
         }
         scan++;
       }
 
-      const content = source.slice(index + 1, scan);
-      const containsEbnfSyntax = /[\s"'(){}[\]|?+*=]/.test(content);
       const isCharacterClass = source[index + 1] === '^' || (
         !containsEbnfSyntax && (hasEscape || hasHyphen)
       );
