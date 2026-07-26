@@ -69,6 +69,17 @@ test('compiles productions separated by EBNF block comments', () => {
   ]);
 });
 
+test('reports opening locations for unterminated EBNF lexical constructs', () => {
+  assert.throws(
+    () => compileEbnf('(* note'),
+    /EBNF error at 1:1: unterminated block comment/
+  );
+  assert.throws(
+    () => compileEbnf('token = [^\\n'),
+    /EBNF error at 1:9: unterminated character class/
+  );
+});
+
 test('reports EBNF syntax errors with a source location', () => {
   assert.throws(
     () => compileEbnf('rule = ( "unterminated" ;'),
