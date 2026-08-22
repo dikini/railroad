@@ -17,6 +17,20 @@ test('compiles every EBNF fence in the self-contained Ash conformance fixture', 
   assert.equal(fences.length, 4, 'fixture must contain exactly four bare EBNF fences');
 
   const productions = fences.flatMap((source) => compileEbnf(source));
+  assert.deepEqual(
+    productions.map(({ name }) => name),
+    [
+      'expression',
+      'term',
+      'call',
+      'decorated_statement',
+      'identifier',
+      'comment_text',
+      'integer',
+      'decimal'
+    ],
+    'fixture must contain the complete ordered production corpus'
+  );
 
   for (const { name, rrd } of productions) {
     assert.doesNotThrow(() => LibRRD.parseDiagram(rrd), name);

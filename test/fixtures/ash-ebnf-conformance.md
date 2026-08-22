@@ -8,9 +8,9 @@ expression ::= term { ("+" | "-") term } ;
 term ::= factor { ("*" | "/") factor } ;
 ```
 
-This call production describes a parenthesized argument list that may be absent and,
-when present, may contain repeated comma-separated arguments. The decorated statement
-shows a postfix optional annotation, and the production spans multiple lines.
+This call production describes a call with parentheses whose argument list may be empty
+and, when present, may contain repeated comma-separated arguments. The decorated
+statement shows a postfix optional annotation, and the production spans multiple lines.
 
 ```ebnf
 call ::= identifier "("
