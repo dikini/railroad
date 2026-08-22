@@ -14,6 +14,13 @@ test('compiles EBNF terminals, references, sequences, and alternatives to RRD DS
   }]);
 });
 
+test('accepts Ash and compatibility production assignments', () => {
+  const compatible = compileEbnf('rule = "x" ;');
+  const ash = compileEbnf('rule ::= "x" ;');
+
+  assert.deepEqual(ash, compatible);
+});
+
 test('compiles grouping, optional, repeated, and one-or-more EBNF forms', () => {
   const productions = compileEbnf('rule = [ "prefix" ] { item } tail+ suffix? ;');
 
@@ -180,6 +187,13 @@ test('reports EBNF syntax errors with a source location', () => {
   assert.throws(
     () => compileEbnf('rule = ( "unterminated" ;'),
     /EBNF error at 1:25:/
+  );
+});
+
+test('reports missing expressions after Ash production assignments', () => {
+  assert.throws(
+    () => compileEbnf('rule ::= ;'),
+    /EBNF error at 1:10: expected an expression/
   );
 });
 
