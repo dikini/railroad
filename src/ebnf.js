@@ -119,7 +119,21 @@ function tokenize(source) {
       continue;
     }
 
-    if ('=;|()[]{}?+*'.includes(character)) {
+    if (source.startsWith('::=', index)) {
+      advance();
+      advance();
+      advance();
+      token('assignment', '::=', startLine, startColumn);
+      continue;
+    }
+
+    if (character === '=') {
+      advance();
+      token('assignment', '=', startLine, startColumn);
+      continue;
+    }
+
+    if (';|()[]{}?+*'.includes(character)) {
       advance();
       token(character, character, startLine, startColumn);
       continue;
@@ -182,7 +196,7 @@ class Parser {
     const productions = [];
     while (this.current().type !== 'eof') {
       const name = this.expect('identifier').value;
-      this.expect('=');
+      this.expect('assignment');
       const expression = this.expression(new Set([';']));
       this.expect(';');
       productions.push({ name, expression });
