@@ -50,8 +50,8 @@ test('replaces an RRD fence with a static SVG railroad diagram', async () => {
   assert.equal(file.messages.length, 0);
 });
 
-test('renders every EBNF production in a fence as a labeled diagram', async () => {
-  const file = await renderWithLibrrd('```ebnf\nfirst = "a" ;\nsecond = first | "b" ;\n```');
+test('renders every Ash-authored EBNF production in a fence as a labeled diagram', async () => {
+  const file = await renderWithLibrrd('```ebnf\nfirst ::= "a" ;\nsecond ::= first | "b" ;\n```');
 
   assert.equal((String(file).match(/<figure class="rrd-diagram">/g) ?? []).length, 2);
   assert.match(String(file), /<figcaption>first<\/figcaption>/);

@@ -26,8 +26,8 @@ test('renders a safe placeholder that round-trips Unicode RRD source', () => {
   assert.equal(Buffer.from(encoded, 'base64url').toString('utf8'), source);
 });
 
-test('renders one RRD placeholder per EBNF production', () => {
-  const html = renderEbnfPlaceholders('first = "a" ; second = first | "b" ;');
+test('renders one RRD placeholder per Ash-authored EBNF production', () => {
+  const html = renderEbnfPlaceholders('first ::= "a" ; second ::= first | "b" ;');
 
   assert.match(html, /<section class="rrd-production"><h4>first<\/h4><div class="rrd-diagram"/);
   assert.match(html, /<section class="rrd-production"><h4>second<\/h4><div class="rrd-diagram"/);
